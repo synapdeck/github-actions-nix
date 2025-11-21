@@ -1,0 +1,59 @@
+amends "package://github.com/jdx/hk/releases/download/v1.18.3/hk@1.18.3#/Config.pkl"
+import "package://github.com/jdx/hk/releases/download/v1.18.3/hk@1.18.3#/Builtins.pkl"
+
+// Define linters to use across hooks
+local linters = new Mapping<String, Step> {
+  // Nix:
+  ["alejandra"] = (Builtins.alejandra) {
+    check = "alejandra --check --quiet {{files}}"
+    fix = "alejandra --quiet {{files}}"
+  }
+
+  ["deadnix"] = new Step {
+    glob = List("**/*.nix")
+    check = "deadnix --fail --no-lambda-pattern-names {{files}}"
+    fix = "deadnix --no-lambda-pattern-names --edit {{files}}"
+    batch = true
+  }
+
+  ["statix"] = new Step {
+    glob = List("**/*.nix")
+    check = "statix check -- {{files}}"
+    fix = "statix fix -- {{files}}"
+    batch = true
+  }
+
+  // Infrastructure:
+  ["actionlint"] = Builtins.actionlint
+
+  // Configuration files:
+  ["pkl"] = Builtins.pkl
+
+  // Builtins:
+  ["check_merge_conflict"] = Builtins.check_merge_conflict
+  ["check_symlinks"] = Builtins.check_symlinks
+  ["mixed_line_ending"] = Builtins.mixed_line_ending
+  ["newlines"] = Builtins.newlines
+  ["trailing_whitespace"] = Builtins.trailing_whitespace
+}
+
+hooks {
+  ["pre-commit"] {
+    // Enable automatic fixes
+    fix = true
+    // Stash unstaged changes
+    stash = "git"
+    steps = linters
+  }
+  ["pre-push"] {
+    // Just check, don't fix
+    steps = linters
+  }
+  ["check"] {
+    steps = linters
+  }
+  ["fix"] {
+    fix = true
+    steps = linters
+  }
+}

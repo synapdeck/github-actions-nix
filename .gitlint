@@ -1,0 +1,9 @@
+[general]
+regex-style-search=true
+contrib=contrib-title-conventional-commits,CT1
+
+[title-max-length]
+line-length=100
+
+[body-max-line-length]
+line-length=100
