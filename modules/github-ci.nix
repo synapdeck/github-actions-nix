@@ -59,8 +59,6 @@ in {
           workflowsDir = mkOption {
             type = types.package;
             readOnly = true;
-            default = pkgs.emptyDirectory;
-            defaultText = literalExpression "pkgs.emptyDirectory";
             description = ''
               Generated .github/workflows directory as a derivation.
               Contains all workflow files defined in the configuration.
@@ -71,7 +69,6 @@ in {
           workflowFiles = mkOption {
             type = types.attrsOf types.package;
             readOnly = true;
-            default = {};
             description = ''
               Individual workflow files as derivations.
               Keys are workflow names (without .yml extension).
