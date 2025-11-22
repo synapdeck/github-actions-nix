@@ -24,7 +24,8 @@
         ];
       };
 
-      flake = {
+      flake = rec {
+        flakeModule = flakeModules.default;
         flakeModules = rec {
           default = githubActions;
           githubActions = ./modules/github-ci.nix;
