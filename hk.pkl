@@ -49,6 +49,13 @@ hooks {
     // Just check, don't fix
     steps = linters
   }
+  ["commit-msg"] {
+    steps {
+      ["gitlint"] = new Step {
+        check = "gitlint --msg-filename {{commit_msg_file}}"
+      }
+    }
+  }
   ["check"] {
     steps = linters
   }
