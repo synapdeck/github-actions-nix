@@ -51,10 +51,33 @@ in {
       };
 
       with_ = mkOption {
-        type = types.nullOr (types.attrsOf (types.oneOf [types.str types.int types.bool]));
+        type = types.nullOr (types.submodule {
+          freeformType = types.attrsOf (types.oneOf [types.str types.int types.bool]);
+          options = {
+            args = mkOption {
+              type = types.nullOr types.str;
+              default = null;
+              description = ''
+                Arguments for Docker container actions.
+                Passed to the container's ENTRYPOINT.
+              '';
+              example = "The \${{ github.event_name }} event triggered this step.";
+            };
+
+            entrypoint = mkOption {
+              type = types.nullOr types.str;
+              default = null;
+              description = ''
+                Override the Docker ENTRYPOINT in the Dockerfile.
+              '';
+              example = "/a/different/executable";
+            };
+          };
+        });
         default = null;
         description = ''
           Input parameters for the action specified in `uses`.
+          Can include regular action inputs or Docker-specific options (args, entrypoint).
         '';
         example = {
           node-version = "20";

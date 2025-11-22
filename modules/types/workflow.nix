@@ -2,156 +2,11 @@
   inherit (lib) mkOption types;
   jobTypes = import ./job.nix {inherit lib;};
   inherit (jobTypes) jobType permissionsType;
-in rec {
-  # Trigger types
-  pushTriggerType = types.submodule {
-    options = {
-      branches = mkOption {
-        type = types.nullOr (types.listOf types.str);
-        default = null;
-        description = "Branch patterns to trigger on.";
-        example = ["main" "develop"];
-      };
-
-      branchesIgnore = mkOption {
-        type = types.nullOr (types.listOf types.str);
-        default = null;
-        description = "Branch patterns to ignore.";
-        example = ["staging"];
-      };
-
-      tags = mkOption {
-        type = types.nullOr (types.listOf types.str);
-        default = null;
-        description = "Tag patterns to trigger on.";
-        example = ["v*"];
-      };
-
-      tagsIgnore = mkOption {
-        type = types.nullOr (types.listOf types.str);
-        default = null;
-        description = "Tag patterns to ignore.";
-      };
-
-      paths = mkOption {
-        type = types.nullOr (types.listOf types.str);
-        default = null;
-        description = "File path patterns to trigger on.";
-        example = ["src/**" "package.json"];
-      };
-
-      pathsIgnore = mkOption {
-        type = types.nullOr (types.listOf types.str);
-        default = null;
-        description = "File path patterns to ignore.";
-        example = ["docs/**"];
-      };
-    };
-  };
-
-  pullRequestTriggerType = types.submodule {
-    options = {
-      branches = mkOption {
-        type = types.nullOr (types.listOf types.str);
-        default = null;
-        description = "Branch patterns to trigger on.";
-        example = ["main"];
-      };
-
-      branchesIgnore = mkOption {
-        type = types.nullOr (types.listOf types.str);
-        default = null;
-        description = "Branch patterns to ignore.";
-      };
-
-      paths = mkOption {
-        type = types.nullOr (types.listOf types.str);
-        default = null;
-        description = "File path patterns to trigger on.";
-      };
-
-      pathsIgnore = mkOption {
-        type = types.nullOr (types.listOf types.str);
-        default = null;
-        description = "File path patterns to ignore.";
-      };
-
-      types = mkOption {
-        type = types.nullOr (types.listOf (types.enum [
-          "assigned"
-          "unassigned"
-          "labeled"
-          "unlabeled"
-          "opened"
-          "edited"
-          "closed"
-          "reopened"
-          "synchronize"
-          "converted_to_draft"
-          "ready_for_review"
-          "locked"
-          "unlocked"
-          "review_requested"
-          "review_request_removed"
-          "auto_merge_enabled"
-          "auto_merge_disabled"
-        ]));
-        default = null;
-        description = "PR event types to trigger on.";
-        example = ["opened" "synchronize"];
-      };
-    };
-  };
-
-  scheduleTriggerType = types.submodule {
-    options = {
-      cron = mkOption {
-        type = types.str;
-        description = "Cron expression for schedule.";
-        example = "0 0 * * *";
-      };
-    };
-  };
-
-  workflowDispatchType = types.submodule {
-    options = {
-      inputs = mkOption {
-        type = types.nullOr (types.attrsOf (types.submodule {
-          options = {
-            description = mkOption {
-              type = types.str;
-              description = "Input description.";
-            };
-            required = mkOption {
-              type = types.bool;
-              default = false;
-              description = "Whether the input is required.";
-            };
-            default = mkOption {
-              type = types.nullOr types.str;
-              default = null;
-              description = "Default value.";
-            };
-            type = mkOption {
-              type = types.nullOr (types.enum ["string" "boolean" "choice" "environment"]);
-              default = null;
-              description = "Input type.";
-            };
-            options = mkOption {
-              type = types.nullOr (types.listOf types.str);
-              default = null;
-              description = "Options for choice type.";
-            };
-          };
-        }));
-        default = null;
-        description = "Workflow dispatch inputs.";
-      };
-    };
-  };
-
+  triggerTypes = import ./triggers.nix {inherit lib;};
+  inherit (triggerTypes) onType;
+in {
   # Workflow type - represents a complete workflow
-  workflowType = types.submodule ({...}: {
+  workflowType = types.submodule (_: {
     options = {
       name = mkOption {
         type = types.str;
@@ -159,43 +14,21 @@ in rec {
         example = "CI";
       };
 
+      runName = mkOption {
+        type = types.nullOr types.str;
+        default = null;
+        description = ''
+          The name for workflow runs generated from the workflow.
+          Can include expressions and reference github and inputs contexts.
+        '';
+        example = "Deploy to \${{ inputs.deploy_target }} by @\${{ github.actor }}";
+      };
+
       on = mkOption {
         type =
           types.either
           (types.listOf types.str)
-          (types.submodule {
-            options = {
-              push = mkOption {
-                type = types.nullOr (types.either pushTriggerType (types.attrsOf types.anything));
-                default = null;
-                description = "Push trigger configuration.";
-              };
-
-              pullRequest = mkOption {
-                type = types.nullOr (types.either pullRequestTriggerType (types.attrsOf types.anything));
-                default = null;
-                description = "Pull request trigger configuration.";
-              };
-
-              schedule = mkOption {
-                type = types.nullOr (types.listOf scheduleTriggerType);
-                default = null;
-                description = "Schedule trigger configuration.";
-              };
-
-              workflowDispatch = mkOption {
-                type = types.nullOr (types.either workflowDispatchType (types.attrsOf types.anything));
-                default = null;
-                description = "Manual workflow dispatch configuration.";
-              };
-
-              workflowCall = mkOption {
-                type = types.nullOr (types.attrsOf types.anything);
-                default = null;
-                description = "Workflow call trigger configuration.";
-              };
-            };
-          });
+          onType;
         description = ''
           Events that trigger the workflow. Can be a list of event names
           or a detailed configuration object.
