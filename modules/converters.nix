@@ -36,6 +36,55 @@
   in
     withWorkingDir;
 
+  # Convert a composite-action step. Same as a workflow step, but GitHub
+  # requires `shell` on `run` steps in composite actions, so default to bash.
+  compositeStepToYaml = step: let
+    converters = import ./converters.nix {inherit lib;};
+    base = converters.stepToYaml step;
+  in
+    if step.run != null && step.shell == null
+    then base // {shell = "bash";}
+    else base;
+
+  # Convert a composite action to YAML-compatible format.
+  actionToYaml = action: let
+    filterNulls = lib.filterAttrs (_name: value: value != null);
+    converters = import ./converters.nix {inherit lib;};
+
+    runsYaml =
+      if action.runs.using == "composite"
+      then {
+        using = "composite";
+        steps = map converters.compositeStepToYaml action.runs.steps;
+      }
+      else throw "actionToYaml: unsupported runs.using '${action.runs.using}'";
+
+    inputsYaml =
+      if action.inputs == {}
+      then null
+      else
+        lib.mapAttrs (_name: input:
+          filterNulls {
+            inherit (input) description required default;
+          })
+        action.inputs;
+
+    outputsYaml =
+      if action.outputs == {}
+      then null
+      else
+        lib.mapAttrs (_name: output: {
+          inherit (output) description value;
+        })
+        action.outputs;
+  in
+    filterNulls {
+      inherit (action) name description;
+      inputs = inputsYaml;
+      outputs = outputsYaml;
+      runs = runsYaml;
+    };
+
   # Convert a job to YAML-compatible format
   jobToYaml = job: let
     filterNulls = lib.filterAttrs (_name: value: value != null);
