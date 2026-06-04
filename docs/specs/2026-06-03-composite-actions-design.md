@@ -47,8 +47,8 @@ actions = mkOption {
   type = types.attrsOf actionType;
   default = {};
   description = ''
-    GitHub Actions composite actions to generate. Keys are action names;
-    each emits .github/actions/<name>/action.yml.
+    GitHub actions to generate. Keys are action names; each emits
+    .github/actions/<name>/action.yml.
   '';
 };
 ```
