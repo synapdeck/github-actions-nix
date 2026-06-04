@@ -11,6 +11,7 @@ Generate GitHub Actions workflows from Nix configuration using a type-safe, decl
 - **Composable**: Leverage Nix's powerful module system
 - **Version controlled**: Workflows are generated from Nix, making changes reviewable
 - **Flake-parts integration**: Works seamlessly with flake-parts-based projects
+- **Composite actions**: Generate reusable `.github/actions/<name>/action.yml` from Nix
 
 ## Quick Start
 
@@ -276,12 +277,46 @@ concurrency = {
 };
 ```
 
+## Composite Actions
+
+Generate reusable composite actions to `.github/actions/<name>/action.yml`:
+
+```nix
+githubActions.actions.setup-ci = {
+  name = "Setup CI";
+  description = "Checkout and toolchain setup";
+  inputs.node-version = {
+    description = "Node version";
+    default = "20";
+  };
+  outputs.cache-hit = {
+    description = "Cache hit";
+    value = "\${{ steps.cache.outputs.cache-hit }}";
+  };
+  runs.steps = [
+    {uses = "actions/checkout@v4";}
+    {
+      name = "Install";
+      id = "cache";
+      run = "npm ci";
+    } # shell defaults to bash
+  ];
+};
+```
+
+`runs.using` is an enum currently supporting only `"composite"`; the
+discriminated type is designed so docker / node / Nix-derivation-script kinds
+can be added additively. Wire `config.githubActions.actionFiles` into your
+`files.files` (the `files` flake module) so `nix run .#write-files` writes the
+action files.
+
 ## Examples
 
 See the `examples/` directory for complete examples:
 
 - [`examples/basic/`](examples/basic/) - Basic CI workflow
 - [`examples/advanced/`](examples/advanced/) - Matrix builds, releases, and scheduled workflows
+- [`examples/composite-action/`](examples/composite-action/) - Composite action with inputs and outputs
 
 ## Module Options
 
@@ -310,6 +345,25 @@ Generated `.github/workflows` directory as a derivation containing all workflow 
 Type: `attrsOf package`
 
 Individual workflow files as derivations. Keys are workflow names (without `.yml` extension).
+
+### `githubActions.actions`
+
+Type: `attrsOf actionType`
+Default: `{}`
+
+GitHub composite actions to generate. Keys are action names; each emits `.github/actions/<name>/action.yml`.
+
+### `githubActions.actionsDir` (read-only)
+
+Type: `package`
+
+Generated `.github/actions` directory as a derivation, containing `<name>/action.yml` subdirectories.
+
+### `githubActions.actionFiles` (read-only)
+
+Type: `attrsOf package`
+
+Individual composite action files as derivations. Keys are `<name>/action.yml`.
 
 ## Development
 
