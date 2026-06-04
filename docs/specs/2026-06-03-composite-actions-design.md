@@ -180,18 +180,40 @@ flake-module) so `nix run .#write-files` writes
 
 ### Extensibility (designed-for, not built)
 
-The discriminated `runs.using` enum + converter dispatch is the extension axis:
+The discriminated `runs.using` enum + converter dispatch is the extension axis.
+Adding a kind is `types.enum [... "<kind>"]` + a converter case + (if it ships
+files) extending emission to materialize them next to `action.yml`:
 
 - **docker**: add `"docker"` to the enum; `runs` gains `image`/`args`/`entrypoint`;
   converter emits `using: docker`.
-- **node**: add `"node20"`; `runs` gains `main`/`pre`/`post`.
-- **Nix-derivation script** (the interesting one): a `using` kind whose `runs`
-  references a built derivation (e.g. `pkgs.writeShellApplication` or a compiled
-  binary). At generation time the library **materializes the derivation into the
-  action directory** alongside `action.yml`, and `action.yml`'s `runs` points at
-  the vendored file. This makes "the action's logic is a typed, tested Nix build"
-  possible while still emitting a standard local action. Out of scope now; the
-  type/emission are structured so it slots in additively.
+- **node / Nix-built JS** — see "Future work" below.
+
+### Future work: JavaScript action kind backed by Nix (next feature)
+
+This is the intended **next** library feature after composite ships, called out
+here so the composite design stays compatible with it.
+
+A `runs.using: "node20"` (and friends) JavaScript action kind. The naive form
+requires committing a bundled `dist/index.js` into the repo (Actions does not
+`npm install` at runtime), which brings a build step, a committed artifact, and a
+staleness hazard. The better form — and the reason this belongs in a Nix-driven
+library — is a **Nix-built JS action**: the action's `main` is a derivation
+(e.g. an esbuild/ncc bundle of typed TypeScript) that the library **materializes
+into the action directory** at generation time, with `action.yml`'s `runs.main`
+pointing at the vendored bundle. The source stays typed/tested/linted; Nix builds
+it reproducibly; `nix run .#write-files` regenerates both `action.yml` and the
+bundle, so there is no hand-committed `dist` and no drift.
+
+**First intended consumer:** synapdeck's `report-checks` action (the per-item
+check-run poster) and possibly its `collect-test-results` helper. In the initial
+rollout those ship as a *composite* action wrapping `actions/github-script` (no
+bundling needed for ~30 lines of glue); once this JS kind exists they migrate to a
+Nix-built JS action with typed inputs and unit tests. Their logic is already
+isolated, so the migration is mechanical.
+
+Out of scope for this spec; the discriminated `runs` type and directory-per-action
+emission are structured so this slots in additively (a new enum value + converter
+case + a derivation-materialization step in emission).
 
 ## Implementation notes
 
