@@ -161,32 +161,34 @@ in {
           )
           cfg.actions;
       in {
-        githubActions.workflowFiles = lib.mkIf cfg.enable workflowFiles;
+        githubActions = {
+          workflowFiles = lib.mkIf cfg.enable workflowFiles;
 
-        githubActions.workflowsDir = lib.mkIf cfg.enable (
-          # Create a directory with all workflow files
-          pkgs.runCommandLocal "github-workflows" {} ''
-            mkdir -p $out
-            ${lib.concatStringsSep "\n" (lib.mapAttrsToList (name: file: ''
-                cp ${file} $out/${name}
-              '')
-              workflowFiles)}
-          ''
-        );
+          workflowsDir = lib.mkIf cfg.enable (
+            # Create a directory with all workflow files
+            pkgs.runCommandLocal "github-workflows" {} ''
+              mkdir -p $out
+              ${lib.concatStringsSep "\n" (lib.mapAttrsToList (name: file: ''
+                  cp ${file} $out/${name}
+                '')
+                workflowFiles)}
+            ''
+          );
 
-        githubActions.actionFiles = lib.mkIf cfg.enable actionFiles;
+          actionFiles = lib.mkIf cfg.enable actionFiles;
 
-        githubActions.actionsDir = lib.mkIf cfg.enable (
-          # Create a directory with all composite action subdirectories
-          pkgs.runCommandLocal "github-actions-composite" {} ''
-            mkdir -p $out
-            ${lib.concatStringsSep "\n" (lib.mapAttrsToList (name: file: ''
-                mkdir -p "$out/$(dirname ${name})"
-                cp ${file} $out/${name}
-              '')
-              actionFiles)}
-          ''
-        );
+          actionsDir = lib.mkIf cfg.enable (
+            # Create a directory with all composite action subdirectories
+            pkgs.runCommandLocal "github-actions-composite" {} ''
+              mkdir -p $out
+              ${lib.concatStringsSep "\n" (lib.mapAttrsToList (name: file: ''
+                  mkdir -p "$out/$(dirname ${name})"
+                  cp ${file} $out/${name}
+                '')
+                actionFiles)}
+            ''
+          );
+        };
       };
     }
   );
