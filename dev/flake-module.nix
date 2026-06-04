@@ -76,7 +76,7 @@
             workflowDispatch = {};
             push = {
               branches = ["master"];
-              tags = ["v?[0-9]+.[0-9]+.[0-9]+*"];
+              tags = ["v[0-9]+.[0-9]+.[0-9]+*"];
             };
           };
 
@@ -93,7 +93,12 @@
                 contents = "read";
               };
               with_ = {
-                visibility = "public";
+                # Publish to FlakeHub only on version tags. The reusable workflow
+                # publishes whenever `visibility` is non-empty (on the default
+                # branch or a tag); leaving it empty on master/PR runs keeps
+                # build + check while suppressing rolling releases. Tagged pushes
+                # set it to "public" so the tag's SemVer version is published.
+                visibility = "\${{ startsWith(github.ref, 'refs/tags/') && 'public' || '' }}";
               };
             };
           };
