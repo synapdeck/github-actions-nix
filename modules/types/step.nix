@@ -86,7 +86,7 @@ in {
       };
 
       env = mkOption {
-        type = types.nullOr (types.attrsOf types.str);
+        type = types.nullOr (types.attrsOf (types.either types.str types.bool));
         default = null;
         description = ''
           Environment variables for the step.

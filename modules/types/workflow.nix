@@ -44,7 +44,7 @@ in {
       };
 
       env = mkOption {
-        type = types.nullOr (types.attrsOf types.str);
+        type = types.nullOr (types.attrsOf (types.either types.str types.bool));
         default = null;
         description = ''
           Environment variables for all jobs in the workflow.
@@ -115,7 +115,7 @@ in {
                   };
 
                   env = mkOption {
-                    type = types.nullOr (types.attrsOf types.str);
+                    type = types.nullOr (types.attrsOf (types.either types.str types.bool));
                     default = null;
                     description = "Default environment variables for all jobs.";
                     example = {
