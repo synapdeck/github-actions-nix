@@ -4,3 +4,10 @@ self-hosted-runner:
     - warp-ubuntu-latest-arm64-4x
     - warp-ubuntu-latest-x64-2x
     - warp-ubuntu-latest-x64-4x
+
+# GitHub added the native stack event before actionlint's event table.
+# Remove this exception once actionlint recognizes it.
+paths:
+  .github/workflows/ci.yml:
+    ignore:
+      - '^invalid activity type "stacked" for "pull_request" Webhook event\.'

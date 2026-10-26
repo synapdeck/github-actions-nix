@@ -24,11 +24,7 @@ local linters = new Mapping<String, Step> {
   }
 
   // Infrastructure:
-  ["actionlint"] = (Builtins.actionlint) {
-    // GitHub added this native-stack event before actionlint's event table.
-    // Ignore only this diagnostic until actionlint recognizes it.
-    check = "actionlint -ignore '^invalid activity type \"stacked\" for \"pull_request\" Webhook event\\.' {{files}}"
-  }
+  ["actionlint"] = Builtins.actionlint
 
   // Configuration files:
   ["pkl"] = Builtins.pkl
