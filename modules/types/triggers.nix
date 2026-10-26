@@ -88,6 +88,7 @@ in rec {
           "closed"
           "reopened"
           "synchronize"
+          "stacked"
           "converted_to_draft"
           "ready_for_review"
           "locked"
