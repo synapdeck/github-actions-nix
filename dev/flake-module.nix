@@ -72,7 +72,7 @@
           name = "CI";
 
           on = {
-            pullRequest = {};
+            pullRequest.types = ["opened" "synchronize" "reopened" "stacked"];
             workflowDispatch = {};
             push = {
               branches = ["master"];
